@@ -84,9 +84,6 @@ fb_xplat_rust_library(
     crate = "iobuf",
     crate_root = "src/lib.rs",
     cxx_bridge = "src/lib.rs",
-    features = [
-        "minibytes",
-    ],
     platforms = (CXX, ANDROID, APPLE, WINDOWS),
     test_deps = [
         "fbsource//third-party/rust:quickcheck",
