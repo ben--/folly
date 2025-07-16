@@ -31,8 +31,76 @@ install(
 
 add_subdirectory(debugging/exception_tracer)
 add_subdirectory(logging/example)
+function(_write_manifest MANIFEST_FILE PY_TARGET)
+  # set(tmp_manifest "${manifest_path}.tmp")
+
+  set(egg_glob "${CMAKE_INSTALL_PREFIX}/lib/python*/site-packages/${APP_NAME}-*.egg")
+
+  add_dependencies("${PY_TARGET}" "${MANIFEST_FILE}")
+  set("${PY_TARGET}" INTERFACE_INCLUDE_DIRECTORIES ${MANIFEST_FILE})
+
+  set(_install_code [[
+    file(GLOB _egg_root @egg_glob@)
+    file(GLOB_RECURSE _egg_files 
+      LIST_DIRECTORIES false
+      "${_egg_root}/*"
+    )
+
+    set(_manifest_path "@MANIFEST_FILE@")
+    cmake_path(GET _manifest_path PARENT_PATH _manifest_dir)
+
+    set(_manifest_contents "FBPY_MANIFEST 1\n")
+
+    foreach(_absfile IN LISTS _egg_files)
+      cmake_path(RELATIVE_PATH _absfile BASE_DIRECTORY ${_egg_root} OUTPUT_VARIABLE _egg_relative)
+      cmake_path(RELATIVE_PATH _absfile BASE_DIRECTORY ${CMAKE_INSTALL_PREFIX} OUTPUT_VARIABLE _manifest_relative)
+      set("${PY_TARGET}" INTERFACE_SOURCES $_absfile)
+      string(APPEND _manifest_contents "${_manifest_relative} :: ${_egg_relative}\n")
+    endforeach()
+
+    file(WRITE ${_manifest_path} ${_manifest_contents})
+  ]])
+  string(CONFIGURE "${_install_code}" _install_code @ONLY)
+  install(CODE "${_install_code}" DESTINATION ${MANIFEST_FILE} EXPORT)
+endfunction()
+
+function(wrap_non_fb_python_library2 TARGET APP_NAME)
+  set(py_lib "${TARGET}.py_lib")
+  add_library("${py_lib}" INTERFACE)
+
+  set(manifest_filename "${TARGET}.manifest")
+  set(build_manifest "${CMAKE_CURRENT_BINARY_DIR}/${manifest_filename}")
+  set(install_manifest "${CMAKE_INSTALL_PREFIX}/${manifest_filename}")
+  target_include_directories(
+    "${py_lib}" INTERFACE
+    "$<BUILD_INTERFACE:${build_manifest}>"
+    "$<INSTALL_INTERFACE:${install_manifest}>"
+  )
+
+  _write_manifest("${install_manifest}" "${py_lib}")
+
+  set(build_install_dir "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}.lib_install")
+  set(build_install_manifest "${build_install_dir}/${TARGET}.manifest")
+  add_custom_command(
+    OUTPUT
+      "${build_install_manifest}"
+    COMMAND false
+    DEPENDS
+      # "${abs_sources}"
+      "${install_manifest}"
+  )
+  add_custom_target(
+    "${TARGET}.py_lib_install"
+    DEPENDS "${build_install_manifest}"
+  )
+
+  # FIXME: do we need the logic from FBPythonBinary:543-553?
+endfunction()
 
 if (PYTHON_EXTENSIONS)
+  find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+  find_package(Cython REQUIRED)
+
   # Create tree of symbolic links in structure required for successful
   # compliation by Cython.
   #   - must be in path named same as extension
@@ -161,5 +229,11 @@ if (PYTHON_EXTENSIONS)
       COMMAND_ECHO STDOUT
       WORKING_DIRECTORY ${_cybld}
     )"
+  )
+  wrap_non_fb_python_library2(folly_python_cpp folly)
+  install(
+    TARGETS folly_python_cpp.py_lib
+    EXPORT folly
+    DESTINATION ${LIB_INSTALL_DIR}
   )
 endif ()
