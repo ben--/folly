@@ -31,8 +31,65 @@ install(
 
 add_subdirectory(debugging/exception_tracer)
 add_subdirectory(logging/example)
+# add_subdirectory(python)
+
+function(wrap_non_fb_python_library TARGET)
+  message(STATUS "#### wrap_non_fb_python_library:0 ${TARGET}")
+  # ${LIB_NAME}.py_sources_built
+  #   Ensures that all source files exist
+  #   Depends on ${dep}.py_lib
+  # add_custom_target("${LIB_NAME}.py_sources_built" DEPENDS "${LIB_NAME}.py_lib")
+
+  # ${LIB_NAME}.py_lib
+  add_library("${TARGET}.py_lib" INTERFACE)
+  add_dependencies("${TARGET}.py_lib" "${TARGET}")
+
+  # get_target_property(binary_dir "${FULL_TARGET}" BUILD_DIR)
+  # set(binary_dir $<TARGET_BUNDLE_DIR:${FULL_TARGET}>)
+  get_target_property(x "${TARGET}" BINARY_DIR)
+  message(STATUS "#### wrap_non_fb_python_library:1 binary_dir = ${x}")
+
+  get_target_property(x "${TARGET}" SOURCE_DIR)
+  message(STATUS "#### wrap_non_fb_python_library:2 source_dir = ${x}")
+
+  get_target_property(x "${TARGET}" INCLUDE_DIRECTORIES)
+  message(STATUS "#### wrap_non_fb_python_library:3 include_dirs = ${x}")
+
+  get_target_property(x "${TARGET}" LIBRARY_OUTPUT_DIRECTORIES)
+  message(STATUS "#### wrap_non_fb_python_library:4 library_output_dirs = ${x}")
+  
+  get_target_property(x "${TARGET}" INSTALL_DIR)
+  message(STATUS "#### wrap_non_fb_python_library:5 install_dir = ${x}")
+  message(STATUS "#### wrap_non_fb_python_library:6 CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
+
+  set(x "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}.manifest")
+  message(STATUS "#### wrap_non_fb_python_library:7 manifest_path = ${x}")
+
+  # FIXME: not found
+  # - INTERFACE_INCLUDE_DIRECTORIES
+  # - INTERFACE_LINK_LIBRARIES
+  # - LINK_DIRECTORIES
+  # - INSTALL_DIR
+  # - BUILD_INSTALL_DIR
+
+  # Found, but not interesting
+  # - LINK_LIBRARIES: Python3::Python;folly
+  # - LIB_INSTALL_DIR = lib
+
+
+  # ${LIB_NAME}.py_lib_install(
+  #   PROPERTIES
+  #   INSTALL_DIR "${abs_install_dir}"
+  #   BUILD_INSTALL_DIR "${build_install_dir}"
+  # )
+  # Ensures that ${build_install_dir}/${LIB_NAME}.manifest exists
+endfunction()
 
 if (PYTHON_EXTENSIONS)
+  message(STATUS "### PYTHON_EXTENSIONS:0")
+  find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+  find_package(Cython REQUIRED)
+
   # Create tree of symbolic links in structure required for successful
   # compliation by Cython.
   #   - must be in path named same as extension
@@ -148,10 +205,13 @@ if (PYTHON_EXTENSIONS)
   # Install Folly Python bindings. getdeps.py does not allow sufficient
   # control of CMAKE_INSTALL_PREFIX, so PYTHON_PACKAGE_INSTALL_DIR can
   # be used to control the installation location of Python packages.
+  message(STATUS "### PYTHON_EXTENSIONS:9 - CMAKE_INSTALL_PREFIX is ${CMAKE_INSTALL_PREFIX}")
   set(INSTALL_DIR ${CMAKE_INSTALL_PREFIX})
   if (NOT ${PYTHON_PACKAGE_INSTALL_DIR} STREQUAL "")
     set(INSTALL_DIR ${PYTHON_PACKAGE_INSTALL_DIR})
   endif()
+
+  message(STATUS "### PYTHON_EXTENSIONS:10 - Installing Folly Python bindings to ${INSTALL_DIR}")
 
   install(CODE "
     execute_process(
@@ -162,4 +222,14 @@ if (PYTHON_EXTENSIONS)
       WORKING_DIRECTORY ${_cybld}
     )"
   )
+
+  message(STATUS "### PYTHON_EXTENSIONS:-3")
+  wrap_non_fb_python_library(folly_python_cpp)
+  message(STATUS "### PYTHON_EXTENSIONS:-2")
+  install(
+    TARGETS folly_python_cpp.py_lib
+    EXPORT folly
+    DESTINATION ${LIB_INSTALL_DIR}
+  )
+  message(STATUS "### PYTHON_EXTENSIONS:-1")
 endif ()
