@@ -63,6 +63,14 @@ pub mod folly {
     pub use crate::IOBuf;
 }
 
+pub mod iobuf_sys {
+    use crate::root::folly::IOBuf;
+
+    // IOBuf isn't movable but can be transferred across thread boundaries if appropriately pinned
+    // somehow.
+    unsafe impl Send for IOBuf {}
+}
+
 #[repr(transparent)]
 pub struct IOBuf {
     // Important: the fields of the C++ struct are not exposed outside of this
