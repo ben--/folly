@@ -1,0 +1,17 @@
+[package]
+name = "iobuf"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bytes = { version = "1.9.0", features = ["serde"] }
+cxx = "1.0"
+fbthrift = { version = "0.0.1+unstable", git = "https://github.com/facebook/fbthrift.git", branch = "main" }
+memmap2 = "0.9"
+minibytes = { version = "0.1.0", path = "../minibytes", features = [
+    "frombytes",
+] }
+
+[build-dependencies]
+cxx-build = "1.0"
+pkg-config = "0.3"
