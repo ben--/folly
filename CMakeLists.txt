@@ -465,7 +465,7 @@ set(FOLLY_INSTALL_TARGETS folly folly_deps)
 
 option(PYTHON_EXTENSIONS
   "Build Python Bindings for Folly, requires Cython and (BUILD_SHARED_LIBS=ON)"
-  OFF
+  ON
 )
 set(PYTHON_PACKAGE_INSTALL_DIR "" CACHE STRING
   "Installation directory for folly Python packages. \
