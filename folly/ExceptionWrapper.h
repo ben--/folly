@@ -397,6 +397,15 @@ exception_wrapper try_and_catch(F&& fn) noexcept {
 }
 } // namespace folly
 
+template <>
+struct fmt::formatter<folly::exception_wrapper> : formatter<folly::fbstring> {
+  template <typename Context>
+  auto format(const folly::exception_wrapper& ew, Context& ctx) const {
+    return formatter<folly::fbstring>::format(ew.what(), ctx);
+  }
+};
+
+
 #include <folly/ExceptionWrapper-inl.h>
 
 #undef FOLLY_REQUIRES
