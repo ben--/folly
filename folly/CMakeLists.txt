@@ -37,9 +37,12 @@ function(_write_manifest MANIFEST_FILE PY_TARGET)
   set(egg_glob "${CMAKE_INSTALL_PREFIX}/lib/python*/site-packages/${APP_NAME}-*.egg")
 
   add_dependencies("${PY_TARGET}" "${MANIFEST_FILE}")
+  # add_dependencies("${MANIFEST_FILE}" folly_python_cpp)
   set("${PY_TARGET}" INTERFACE_INCLUDE_DIRECTORIES ${MANIFEST_FILE})
+  set("${PY_TARGET}" INTERFACE_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib")
 
   set(_install_code [[
+    message(STATUS "### _write_manifest:3")
     file(GLOB _egg_root @egg_glob@)
     file(GLOB_RECURSE _egg_files 
       LIST_DIRECTORIES false
@@ -52,12 +55,14 @@ function(_write_manifest MANIFEST_FILE PY_TARGET)
     set(_manifest_contents "FBPY_MANIFEST 1\n")
 
     foreach(_absfile IN LISTS _egg_files)
+      message(STATUS "### _write_manifest:3.1 ${_absfile}")
       cmake_path(RELATIVE_PATH _absfile BASE_DIRECTORY ${_egg_root} OUTPUT_VARIABLE _egg_relative)
       cmake_path(RELATIVE_PATH _absfile BASE_DIRECTORY ${CMAKE_INSTALL_PREFIX} OUTPUT_VARIABLE _manifest_relative)
       set("${PY_TARGET}" INTERFACE_SOURCES $_absfile)
       string(APPEND _manifest_contents "${_manifest_relative} :: ${_egg_relative}\n")
     endforeach()
 
+    message(STATUS "### _write_manifest:3.-1")
     file(WRITE ${_manifest_path} ${_manifest_contents})
   ]])
   string(CONFIGURE "${_install_code}" _install_code @ONLY)
@@ -65,8 +70,11 @@ function(_write_manifest MANIFEST_FILE PY_TARGET)
 endfunction()
 
 function(wrap_non_fb_python_library2 TARGET APP_NAME)
+  message(STATUS "#### wrap_non_fb_python_library:0 ${TARGET}")
   set(py_lib "${TARGET}.py_lib")
   add_library("${py_lib}" INTERFACE)
+  add_dependencies("${py_lib}" "${TARGET}")
+  target_link_libraries("${py_lib}" INTERFACE "${TARGET}")
 
   set(manifest_filename "${TARGET}.manifest")
   set(build_manifest "${CMAKE_CURRENT_BINARY_DIR}/${manifest_filename}")
@@ -80,7 +88,7 @@ function(wrap_non_fb_python_library2 TARGET APP_NAME)
   _write_manifest("${install_manifest}" "${py_lib}")
 
   set(build_install_dir "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}.lib_install")
-  set(build_install_manifest "${build_install_dir}/${TARGET}.manifest")
+  set(build_install_manifest "${build_install_dir}/${manifest_filename}")
   add_custom_command(
     OUTPUT
       "${build_install_manifest}"
@@ -140,11 +148,13 @@ if (PYTHON_EXTENSIONS)
   set(incs "$<$<BOOL:${prop}>:-I$<JOIN:${prop},:>>")
   set(glog_lib "${GLOG_LIBRARY}")
   cmake_path(REMOVE_FILENAME glog_lib)
-  set(libs "-L${CMAKE_BINARY_DIR}:${glog_lib}")
+  set(libs "-L${CMAKE_BINARY_DIR}:${CMAKE_BINARY_DIR}/folly:${glog_lib}")
 
   add_custom_target(folly_python_bindings ALL
     DEPENDS folly create_binding_symlink
     WORKING_DIRECTORY ${_cybld})
+
+  add_dependencies(folly_python_bindings folly_python_cpp)
 
   add_custom_command(TARGET folly_python_bindings POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E env
@@ -152,10 +162,19 @@ if (PYTHON_EXTENSIONS)
       "CXXFLAGS=${CMAKE_CXX_FLAGS}"
       "CC=${CMAKE_C_COMPILER}"
       "CXX=${CMAKE_CXX_COMPILER}"
+      "LDFLAGS=-Wl,--no-as-needed -lfolly_python_cpp -Wl,--as-needed"
       python3 ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.py
       build_ext -f ${incs} ${libs}
     BYPRODUCTS
       ${_cybld}/folly/iobuf_api.h
+    DEPENDS
+      ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.py
+      # ${CMAKE_CURRENT_SOURCE_DIR}/python/executor.pyx
+      # ${CMAKE_CURRENT_SOURCE_DIR}/python/iobuf.pyx
+      # ${CMAKE_CURRENT_SOURCE_DIR}/python/iobuf_ext.cpp
+      # ${CMAKE_CURRENT_SOURCE_DIR}/python/ProactorExecutor.cpp
+      # ${CMAKE_CURRENT_SOURCE_DIR}/python/*.pxd
+      # ${CMAKE_CURRENT_SOURCE_DIR}/python/*.h
     WORKING_DIRECTORY ${_cybld}
   )
 
