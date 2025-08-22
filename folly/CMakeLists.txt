@@ -37,6 +37,8 @@ function(_write_manifest MANIFEST_FILE PY_TARGET)
   set(egg_glob "${CMAKE_INSTALL_PREFIX}/lib/python*/site-packages/${APP_NAME}-*.egg")
 
   add_dependencies("${PY_TARGET}" "${MANIFEST_FILE}")
+  # add_dependencies("${PY_TARGET}" folly_python_cpp)
+  # add_dependencies("${PY_TARGET}" "${MANIFEST_FILE}")
   # add_dependencies("${MANIFEST_FILE}" folly_python_cpp)
   set("${PY_TARGET}" INTERFACE_INCLUDE_DIRECTORIES ${MANIFEST_FILE})
   set("${PY_TARGET}" INTERFACE_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib")
@@ -69,12 +71,12 @@ function(_write_manifest MANIFEST_FILE PY_TARGET)
   install(CODE "${_install_code}" DESTINATION ${MANIFEST_FILE} EXPORT)
 endfunction()
 
-function(wrap_non_fb_python_library2 TARGET APP_NAME)
+function(wrap_non_fb_python_library TARGET APP_NAME)
   message(STATUS "#### wrap_non_fb_python_library:0 ${TARGET}")
   set(py_lib "${TARGET}.py_lib")
   add_library("${py_lib}" INTERFACE)
-  add_dependencies("${py_lib}" "${TARGET}")
-  target_link_libraries("${py_lib}" INTERFACE "${TARGET}")
+  # add_dependencies("${py_lib}" "${TARGET}")
+  # target_link_libraries("${py_lib}" INTERFACE "${TARGET}")
 
   set(manifest_filename "${TARGET}.manifest")
   set(build_manifest "${CMAKE_CURRENT_BINARY_DIR}/${manifest_filename}")
@@ -154,15 +156,13 @@ if (PYTHON_EXTENSIONS)
     DEPENDS folly create_binding_symlink
     WORKING_DIRECTORY ${_cybld})
 
-  add_dependencies(folly_python_bindings folly_python_cpp)
-
   add_custom_command(TARGET folly_python_bindings POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E env
       "CFLAGS=${CMAKE_C_FLAGS}"
       "CXXFLAGS=${CMAKE_CXX_FLAGS}"
       "CC=${CMAKE_C_COMPILER}"
       "CXX=${CMAKE_CXX_COMPILER}"
-      "LDFLAGS=-Wl,--no-as-needed -lfolly_python_cpp -Wl,--as-needed"
+      # "LDFLAGS=-Wl,--no-as-needed -lfolly_python_cpp -Wl,--as-needed"
       python3 ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.py
       build_ext -f ${incs} ${libs}
     BYPRODUCTS
@@ -185,7 +185,6 @@ if (PYTHON_EXTENSIONS)
       "${_cybld}/folly/iobuf_api.h"
       "${_cybld}/folly/python/iobuf_api.h"
   )
-
 
   add_library(
     folly_python_cpp
@@ -249,7 +248,7 @@ if (PYTHON_EXTENSIONS)
       WORKING_DIRECTORY ${_cybld}
     )"
   )
-  wrap_non_fb_python_library2(folly_python_cpp folly)
+  wrap_non_fb_python_library(folly_python_cpp folly)
   install(
     TARGETS folly_python_cpp.py_lib
     EXPORT folly

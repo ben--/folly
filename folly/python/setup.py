@@ -28,13 +28,23 @@ Options.fast_fail = True
 exts = [
     Extension(
         "folly.executor",
-        sources=["folly/executor.pyx", "folly/ProactorExecutor.cpp"],
+        sources=[
+            "folly/executor.pyx",
+            "folly/ProactorExecutor.cpp",
+            # "folly/executor.cpp",
+            # "folly/error.cpp",
+        ],
         libraries=["folly", "glog"],
-        extra_link_args=["-Wl,--no-as-needed","-lfolly_python_cpp","-Wl,--as-needed"],
+        # extra_link_args=["-Wl,--no-as-needed","-lfolly_python_cpp","-Wl,--as-needed"],
     ),
     Extension(
         "folly.iobuf",
-        sources=["folly/iobuf.pyx", "folly/iobuf_ext.cpp"],
+        sources=[
+            "folly/iobuf.pyx",
+            "folly/iobuf_ext.cpp",
+            # "folly/iobuf.cpp",
+            # "folly/error.cpp",
+        ],
         libraries=["folly", "glog"],
     ),
 ]
