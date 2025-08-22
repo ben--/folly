@@ -192,6 +192,7 @@ if (PYTHON_EXTENSIONS)
       python/executor.cpp
       python/iobuf.cpp
   )
+  set_target_properties(folly_python_cpp PROPERTIES OUTPUT_NAME folly_python_cpp)
 
   target_include_directories(folly_python_cpp PRIVATE ${Python3_INCLUDE_DIRS})
   target_link_libraries(folly_python_cpp PRIVATE Python3::Python)
@@ -212,6 +213,9 @@ if (PYTHON_EXTENSIONS)
     FILES_MATCHING
       PATTERN "*.h"
   )
+
+  # add_custom_target(folly_python_cpp)
+  # add_dependencies(folly_python_cpp folly_python_cpp.lib folly_python_bindings)
 
   add_custom_command(TARGET folly_python_bindings
     COMMAND ${CMAKE_COMMAND} -E env
