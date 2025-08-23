@@ -32,8 +32,8 @@ exts = [
             "folly/executor.pyx",
             "folly/ProactorExecutor.cpp",
         ],
-        # libraries=["folly_python_cpp", "folly", "glog"],
-        libraries=["folly", "glog"],
+        libraries=["folly_python_cpp", "folly", "glog"],
+        # libraries=["folly", "glog"],
     ),
     Extension(
         "folly.iobuf",
