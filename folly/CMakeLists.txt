@@ -177,6 +177,7 @@ if (PYTHON_EXTENSIONS)
       # ${CMAKE_CURRENT_SOURCE_DIR}/python/*.h
     WORKING_DIRECTORY ${_cybld}
   )
+  add_dependencies(folly_python_bindings folly_python_cpp)
 
   add_custom_target(create_post_binding_symlink ALL)
   add_custom_command(TARGET create_post_binding_symlink
@@ -243,6 +244,7 @@ if (PYTHON_EXTENSIONS)
     set(INSTALL_DIR ${PYTHON_PACKAGE_INSTALL_DIR})
   endif()
 
+  message(STATUS "#### Installing Folly Python bindings to ${INSTALL_DIR}")
   install(CODE "
     execute_process(
       COMMAND
