@@ -378,6 +378,19 @@ std::basic_ostream<Ch>& operator<<(
   return sout;
 }
 
+template <>
+struct fmt::formatter<exception_wrapper>
+    : formatter<string_view> {
+  template <typename Context>
+  auto format(const exception_wrapper& ew, Context& ctx) const {
+    if (auto e = ew.get_exception()) {
+      return formatter<string_view>::format(e->what(), ctx);
+    } else {
+      return "<unknown>";
+    }
+  }
+};
+
 /**
  * Swaps the value of `a` with the value of `b`.
  */
