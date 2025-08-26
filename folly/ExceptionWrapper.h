@@ -378,19 +378,6 @@ std::basic_ostream<Ch>& operator<<(
   return sout;
 }
 
-template <>
-struct fmt::formatter<exception_wrapper>
-    : formatter<string_view> {
-  template <typename Context>
-  auto format(const exception_wrapper& ew, Context& ctx) const {
-    if (auto e = ew.get_exception()) {
-      return formatter<string_view>::format(e->what(), ctx);
-    } else {
-      return "<unknown>";
-    }
-  }
-};
-
 /**
  * Swaps the value of `a` with the value of `b`.
  */
@@ -409,6 +396,19 @@ exception_wrapper try_and_catch(F&& fn) noexcept {
   return exception_wrapper{catch_exception(x, current_exception)};
 }
 } // namespace folly
+
+template <>
+struct fmt::formatter<folly::exception_wrapper>
+    : formatter<std::string_view> {
+  template <typename Context>
+  auto format(const folly::exception_wrapper& ew, Context& ctx) const {
+    if (auto e = ew.get_exception()) {
+      return formatter<std::string_view>::format(e->what(), ctx);
+    } else {
+      return formatter<std::string_view>::format("<unknown>", ctx);
+    }
+  }
+};
 
 #include <folly/ExceptionWrapper-inl.h>
 
