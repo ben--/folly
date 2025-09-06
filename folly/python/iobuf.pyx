@@ -15,7 +15,6 @@
 import sys
 from builtins import memoryview as py_memoryview
 from folly.executor cimport get_running_executor
-from folly.executor import AsyncioExecutor
 from cpython cimport Py_buffer
 from weakref import WeakValueDictionary
 from cpython.object cimport Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE

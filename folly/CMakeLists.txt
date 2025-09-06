@@ -31,85 +31,86 @@ install(
 
 add_subdirectory(debugging/exception_tracer)
 add_subdirectory(logging/example)
-function(_write_manifest MANIFEST_FILE PY_TARGET)
-  # set(tmp_manifest "${manifest_path}.tmp")
+# function(_write_manifest MANIFEST_FILE PY_TARGET)
+#   # set(tmp_manifest "${manifest_path}.tmp")
 
-  set(egg_glob "${CMAKE_INSTALL_PREFIX}/lib/python*/site-packages/${APP_NAME}-*.egg")
+#   set(egg_glob "${CMAKE_INSTALL_PREFIX}/lib/python*/site-packages/${APP_NAME}-*.egg")
 
-  add_dependencies("${PY_TARGET}" "${MANIFEST_FILE}")
-  # add_dependencies("${PY_TARGET}" folly_python_cpp)
-  # add_dependencies("${PY_TARGET}" "${MANIFEST_FILE}")
-  # add_dependencies("${MANIFEST_FILE}" folly_python_cpp)
-  set("${PY_TARGET}" INTERFACE_INCLUDE_DIRECTORIES ${MANIFEST_FILE})
-  set("${PY_TARGET}" INTERFACE_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib")
+#   add_dependencies("${PY_TARGET}" "${MANIFEST_FILE}")
+#   # add_dependencies("${PY_TARGET}" folly_python_cpp)
+#   # add_dependencies("${PY_TARGET}" "${MANIFEST_FILE}")
+#   # add_dependencies("${MANIFEST_FILE}" folly_python_cpp)
+#   set("${PY_TARGET}" INTERFACE_INCLUDE_DIRECTORIES ${MANIFEST_FILE})
+#   set("${PY_TARGET}" INTERFACE_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib")
 
-  set(_install_code [[
-    message(STATUS "### _write_manifest:3")
-    file(GLOB _egg_root @egg_glob@)
-    file(GLOB_RECURSE _egg_files 
-      LIST_DIRECTORIES false
-      "${_egg_root}/*"
-    )
+#   set(_install_code [[
+#     message(STATUS "### _write_manifest:3")
+#     file(GLOB _egg_root @egg_glob@)
+#     file(GLOB_RECURSE _egg_files 
+#       LIST_DIRECTORIES false
+#       "${_egg_root}/*"
+#     )
 
-    set(_manifest_path "@MANIFEST_FILE@")
-    cmake_path(GET _manifest_path PARENT_PATH _manifest_dir)
+#     set(_manifest_path "@MANIFEST_FILE@")
+#     cmake_path(GET _manifest_path PARENT_PATH _manifest_dir)
 
-    set(_manifest_contents "FBPY_MANIFEST 1\n")
+#     set(_manifest_contents "FBPY_MANIFEST 1\n")
 
-    foreach(_absfile IN LISTS _egg_files)
-      message(STATUS "### _write_manifest:3.1 ${_absfile}")
-      cmake_path(RELATIVE_PATH _absfile BASE_DIRECTORY ${_egg_root} OUTPUT_VARIABLE _egg_relative)
-      cmake_path(RELATIVE_PATH _absfile BASE_DIRECTORY ${CMAKE_INSTALL_PREFIX} OUTPUT_VARIABLE _manifest_relative)
-      set("${PY_TARGET}" INTERFACE_SOURCES $_absfile)
-      if(NOT ${_egg_relative} MATCHES "^EGG-INFO/")
-        string(APPEND _manifest_contents "${_manifest_relative} :: ${_egg_relative}\n")
-      endif()
-    endforeach()
+#     foreach(_absfile IN LISTS _egg_files)
+#       message(STATUS "### _write_manifest:3.1 ${_absfile}")
+#       cmake_path(RELATIVE_PATH _absfile BASE_DIRECTORY ${_egg_root} OUTPUT_VARIABLE _egg_relative)
+#       cmake_path(RELATIVE_PATH _absfile BASE_DIRECTORY ${CMAKE_INSTALL_PREFIX} OUTPUT_VARIABLE _manifest_relative)
+#       set("${PY_TARGET}" INTERFACE_SOURCES $_absfile)
+#       if(NOT ${_egg_relative} MATCHES "^EGG-INFO/")
+#         string(APPEND _manifest_contents "${_manifest_relative} :: ${_egg_relative}\n")
+#       endif()
+#     endforeach()
 
-    message(STATUS "### _write_manifest:3.-1")
-    file(WRITE ${_manifest_path} ${_manifest_contents})
-  ]])
-  string(CONFIGURE "${_install_code}" _install_code @ONLY)
-  install(CODE "${_install_code}" DESTINATION ${MANIFEST_FILE} EXPORT)
-endfunction()
+#     message(STATUS "### _write_manifest:3.-1")
+#     file(WRITE ${_manifest_path} ${_manifest_contents})
+#   ]])
+#   string(CONFIGURE "${_install_code}" _install_code @ONLY)
+#   install(CODE "${_install_code}" DESTINATION ${MANIFEST_FILE} EXPORT)
+# endfunction()
 
-function(wrap_non_fb_python_library TARGET APP_NAME)
-  message(STATUS "#### wrap_non_fb_python_library:0 ${TARGET}")
-  set(py_lib "${TARGET}.py_lib")
-  add_library("${py_lib}" INTERFACE)
-  # add_dependencies("${py_lib}" "${TARGET}")
-  # target_link_libraries("${py_lib}" INTERFACE "${TARGET}")
+# function(wrap_non_fb_python_library TARGET APP_NAME)
+#   message(STATUS "#### wrap_non_fb_python_library:0 ${TARGET}")
+#   set(py_lib "${TARGET}.py_lib")
+#   add_library("${py_lib}" INTERFACE)
+#   # add_dependencies("${py_lib}" "${TARGET}")
+#   # target_link_libraries("${py_lib}" INTERFACE "${TARGET}")
 
-  set(manifest_filename "${TARGET}.manifest")
-  set(build_manifest "${CMAKE_CURRENT_BINARY_DIR}/${manifest_filename}")
-  set(install_manifest "${CMAKE_INSTALL_PREFIX}/${manifest_filename}")
-  target_include_directories(
-    "${py_lib}" INTERFACE
-    "$<BUILD_INTERFACE:${build_manifest}>"
-    "$<INSTALL_INTERFACE:${install_manifest}>"
-  )
+#   set(manifest_filename "${TARGET}.manifest")
+#   set(build_manifest "${CMAKE_CURRENT_BINARY_DIR}/${manifest_filename}")
+#   set(install_manifest "${CMAKE_INSTALL_PREFIX}/${manifest_filename}")
+#   target_include_directories(
+#     "${py_lib}" INTERFACE
+#     "$<BUILD_INTERFACE:${build_manifest}>"
+#     "$<INSTALL_INTERFACE:${install_manifest}>"
+#   )
 
-  _write_manifest("${install_manifest}" "${py_lib}")
+#   _write_manifest("${install_manifest}" "${py_lib}")
 
-  set(build_install_dir "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}.lib_install")
-  set(build_install_manifest "${build_install_dir}/${manifest_filename}")
-  add_custom_command(
-    OUTPUT
-      "${build_install_manifest}"
-    COMMAND false
-    DEPENDS
-      # "${abs_sources}"
-      "${install_manifest}"
-  )
-  add_custom_target(
-    "${TARGET}.py_lib_install"
-    DEPENDS "${build_install_manifest}"
-  )
+#   set(build_install_dir "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}.lib_install")
+#   set(build_install_manifest "${build_install_dir}/${manifest_filename}")
+#   add_custom_command(
+#     OUTPUT
+#       "${build_install_manifest}"
+#     COMMAND false
+#     DEPENDS
+#       # "${abs_sources}"
+#       "${install_manifest}"
+#   )
+#   add_custom_target(
+#     "${TARGET}.py_lib_install"
+#     DEPENDS "${build_install_manifest}"
+#   )
 
-  # FIXME: do we need the logic from FBPythonBinary:543-553?
-endfunction()
+#   # FIXME: do we need the logic from FBPythonBinary:543-553?
+# endfunction()
 
 if (PYTHON_EXTENSIONS)
+  include(FBPythonWrapper)
   find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
   find_package(Cython REQUIRED)
 
@@ -173,8 +174,6 @@ if (PYTHON_EXTENSIONS)
       "CFLAGS=${CMAKE_C_FLAGS} -std=c++20 -fcoroutines -fPIC"
       "CXXFLAGS=${CMAKE_CXX_FLAGS} -std=c++20 -fcoroutines -fPIC"
       "CXX=${CMAKE_CXX_COMPILER}"
-      # "PYTHONPATH=$<TARGET_PROPERTY:Folly::folly_python_cpp,INTERFACE_INCLUDE_DIRECTORIES>"
-      # "PYTHONPATH=${FOLLY_PY_SITE}:$ENV{PYTHONPATH}"
       python3 ${CMAKE_CURRENT_SOURCE_DIR}/python/setup.py -v --api-only
     COMMENT "... Python binding headers done"
     DEPENDS
@@ -186,8 +185,6 @@ if (PYTHON_EXTENSIONS)
       ${CMAKE_CURRENT_SOURCE_DIR}/python/iobuf.pyx
     BYPRODUCTS
       ${_cybld}/folly/iobuf_api.h
-      # ${_cybld}/thrift/python/server/server_api.h
-      # ${_cybld}/thrift/python/util_api.h
     WORKING_DIRECTORY ${_cybld}
   )
 
@@ -225,8 +222,6 @@ if (PYTHON_EXTENSIONS)
   )
   add_dependencies(folly_python_cpp folly_python_binding_headers create_binding_symlink)
   set_property(TARGET folly_python_cpp PROPERTY VERSION ${PACKAGE_VERSION})
-
-  # set_target_properties(folly_python_cpp PROPERTIES OUTPUT_NAME folly_python_cpp)
 
   target_compile_definitions(folly_python_cpp PRIVATE BOOST_NO_AUTO_PTR)
   target_include_directories(folly_python_cpp PRIVATE "${_cybld}")
